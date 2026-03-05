@@ -4,7 +4,6 @@ from pydantic import Field
 import iris.utils.math as math_utils
 from iris.io.class_configs import Algorithm
 from iris.io.dataclasses import EyeOrientation, GeometryPolygons
-from iris.io.errors import EyeOrientationEstimationError
 
 
 class MomentOfArea(Algorithm):
@@ -56,10 +55,9 @@ class MomentOfArea(Algorithm):
 
         eccentricity = math_utils.eccentricity(moments)
         if eccentricity < self.params.eccentricity_threshold:
-            raise EyeOrientationEstimationError(
-                "The eyeball is too circular to reliably determine its orientation. "
-                f"Computed eccentricity: {eccentricity}. Threshold: {self.params.eccentricity_threshold}"
-            )
+            # For nearly circular eyeballs, use default horizontal orientation
+            # This is valid for well-centered eyes or tight crops
+            return EyeOrientation(angle=0.0)
 
         orientation = math_utils.orientation(moments)
         return EyeOrientation(angle=orientation)

@@ -196,3 +196,21 @@ This project is licensed under the [MIT license](https://github.com/worldcoin/op
 1. [_"Iris Recognition Inference System"_](https://worldcoin.org/blog/engineering/iris-recognition-inference-system)
 2. [_"Iris feature extraction with 2D Gabor wavelets"_](https://worldcoin.org/blog/engineering/iris-feature-extraction)
 3. [_"How iris recognition works"_](https://ieeexplore.ieee.org/document/1262028)
+
+
+
+## Running service
+
+# 1. Activate your existing virtual environment
+source open-iris-vene/bin/activate
+
+# 2. Install all dependencies at once
+pip install uvicorn fastapi
+pip install opencv-python numpy
+pip install huggingface-hub onnx onnxruntime
+
+# 3. Install the iris package in development mode
+pip install setuptools wheel
+
+# 4. Run the service
+python iris_service.py

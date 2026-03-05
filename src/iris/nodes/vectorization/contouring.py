@@ -70,7 +70,10 @@ class ContouringAlgorithm(Algorithm):
             GeometryPolygons: Geometry polygons points.
         """
         if not np.any(geometry_mask.iris_mask):
-            raise VectorizationError("Geometry raster verification failed.")
+            raise VectorizationError(
+                "No iris region detected in eye image. "
+                "Possible causes: poor lighting, blurry image, eye closed, or off-angle gaze."
+            )
 
         geometry_contours = self._find_contours(geometry_mask)
 
@@ -98,23 +101,32 @@ class ContouringAlgorithm(Algorithm):
             binary_mask (np.ndarray): Raster object.
 
         Raises:
-            VectorizationError: Raised if number of contours found is different than 1.
+            VectorizationError: Raised if no contours found after filtering.
 
         Returns:
             np.ndarray: Contour points array.
         """
         contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        if hierarchy is None:
-            raise VectorizationError("_find_class_contours: No contour hierarchy found at all.")
+        if hierarchy is None or len(contours) == 0:
+            raise VectorizationError("_find_class_contours: No contours found in mask.")
 
         parent_indices = np.flatnonzero(hierarchy[..., 3] == -1)
         contours = [np.squeeze(contours[i]) for i in parent_indices]
 
+        # Filter out empty contours (single points or lines with < 3 points)
+        contours = [c for c in contours if len(c.shape) == 2 and c.shape[0] >= 3]
+
         contours = self._filter_contours(contours)
 
-        if len(contours) != 1:
-            raise VectorizationError("_find_class_contours: Number of contours must be equal to 1.")
+        if len(contours) == 0:
+            raise VectorizationError("_find_class_contours: No contours remaining after filtering.")
+
+        # If multiple contours, select the largest one by area
+        if len(contours) > 1:
+            contour_areas = [area(c) for c in contours]
+            largest_idx = np.argmax(contour_areas)
+            return contours[largest_idx]
 
         return contours[0]
 
